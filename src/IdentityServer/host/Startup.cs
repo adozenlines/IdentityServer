@@ -54,6 +54,13 @@ namespace IdentityServerHost
                     options.MutualTls.Enabled = true;
                     options.MutualTls.DomainName = "mtls";
                     //options.MutualTls.AlwaysEmitConfirmationClaim = true;
+
+                    options.KeyManagement.InitializationDuration = TimeSpan.Zero;
+
+                    //options.KeyManagement.Enabled = false;
+                    //options.KeyManagement.KeyActivationDelay = TimeSpan.FromSeconds(10);
+                    //options.KeyManagement.KeyExpiration = options.KeyManagement.KeyActivationDelay * 2;
+                    //options.KeyManagement.KeyRetirement = options.KeyManagement.KeyActivationDelay * 3;
                 })
                 .AddInMemoryClients(Clients.Get())
                 .AddInMemoryIdentityResources(Resources.IdentityResources)
@@ -69,16 +76,6 @@ namespace IdentityServerHost
                 .AddCustomTokenRequestValidator<ParameterizedScopeTokenRequestValidator>()
                 .AddScopeParser<ParameterizedScopeParser>()
                 .AddMutualTlsSecretValidators();
-
-            // use this for persisted grants store
-            // var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
-            // const string connectionString = "DataSource=identityserver.db";
-            // builder.AddOperationalStore(options =>
-            // {
-            //     options.ConfigureDbContext = b => b.UseSqlite(connectionString,
-            //         sql => sql.MigrationsAssembly(migrationsAssembly));
-            // });
-                
 
             services.AddExternalIdentityProviders();
 
@@ -101,9 +98,6 @@ namespace IdentityServerHost
 
         public void Configure(IApplicationBuilder app)
         {
-            // use this for persisted grants store
-            // app.InitializePersistedGrantsStore();
-            
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
@@ -137,14 +131,14 @@ namespace IdentityServerHost
             //builder.AddDeveloperSigningCredential();
 
             // use an RSA-based certificate with RS256
-            var rsaCert = new X509Certificate2("./keys/identityserver.test.rsa.p12", "changeit");
+            var rsaCert = new X509Certificate2("./testkeys/identityserver.test.rsa.p12", "changeit");
             builder.AddSigningCredential(rsaCert, "RS256");
 
             // ...and PS256
             builder.AddSigningCredential(rsaCert, "PS256");
 
             // or manually extract ECDSA key from certificate (directly using the certificate is not support by Microsoft right now)
-            var ecCert = new X509Certificate2("./keys/identityserver.test.ecdsa.p12", "changeit");
+            var ecCert = new X509Certificate2("./testkeys/identityserver.test.ecdsa.p12", "changeit");
             var key = new ECDsaSecurityKey(ecCert.GetECDsaPrivateKey())
             {
                 KeyId = CryptoRandom.CreateUniqueId(16, CryptoRandom.OutputFormat.Hex)
@@ -154,15 +148,6 @@ namespace IdentityServerHost
                 key,
                 IdentityServerConstants.ECDsaSigningAlgorithm.ES256);
         }
-
-        // use this for persisted grants store
-        // public static void InitializePersistedGrantsStore(this IApplicationBuilder app)
-        // {
-        //     using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
-        //     {
-        //         serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
-        //     }
-        // }
     }
 
     public static class ServiceExtensions
